@@ -31,6 +31,7 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState('')
   const [isMock, setIsMock] = useState(false)
+  const [hasPreviewExtras, setHasPreviewExtras] = useState(false)
 
   useEffect(() => {
     async function loadProduct() {
@@ -40,14 +41,15 @@ function ProductDetail() {
       setSelection(firstSelection(loadedProduct.variants))
       setActiveImage(loadedProduct.images?.[0] || '')
       setIsMock(result.isMock)
+      setHasPreviewExtras(false)
 
       const [reviewResult, moreResult] = await Promise.all([
         getProductReviews(loadedProduct._id || loadedProduct.id),
-        getStorefrontProducts({ vendor: loadedProduct.vendor?.slug, limit: 4 }),
+        getStorefrontProducts({ vendor: loadedProduct.vendor?._id, limit: 4 }),
       ])
       setReviews(reviewResult.data.reviews || [])
       setMoreProducts((moreResult.data || []).filter((item) => item._id !== loadedProduct._id).slice(0, 4))
-      setIsMock((current) => current || reviewResult.isMock || moreResult.isMock)
+      setHasPreviewExtras(reviewResult.isMock || moreResult.isMock)
     }
 
     loadProduct()
@@ -82,6 +84,7 @@ function ProductDetail() {
   return (
     <div className="storefront-container">
       {isMock ? <div className="mock-banner">Mock product details are being shown because the API could not be reached.</div> : null}
+      {!isMock && hasPreviewExtras ? <div className="mock-banner">Some reviews or recommendations are preview data because those requests failed.</div> : null}
       <Breadcrumb items={[{ label: product.title || product.name }]} />
       <section className="product-detail-layout">
         <div>
